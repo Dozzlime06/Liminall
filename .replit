@@ -15,15 +15,20 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "withdraw-usdc"
+args = "web-server"
 
 [[workflows.workflow]]
-name = "withdraw-usdc"
+name = "web-server"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node withdraw-usdc.js"
+args = "npm run dev"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
