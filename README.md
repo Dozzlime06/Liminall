@@ -36,17 +36,12 @@ node withdraw-usdc.js
 The script will:
 1. Connect to Base network
 2. Check the USDC balance in your contract
-3. Attempt to withdraw all USDC using common withdrawal function names
+3. Call the `withdrawUSDC()` function to withdraw all USDC
 4. Display the transaction hash and confirmation
 
 ## What the Script Does
 
-The script tries multiple withdrawal function signatures automatically:
-- `withdraw(address token, uint256 amount)`
-- `withdrawToken(address token, uint256 amount)`
-- `emergencyWithdraw(address token)`
-
-This ensures compatibility with different contract implementations.
+The script calls the contract's `withdrawUSDC()` function, which withdraws all USDC tokens held by the contract and transfers them to your wallet address.
 
 ## Troubleshooting
 
