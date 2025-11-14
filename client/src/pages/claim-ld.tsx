@@ -107,7 +107,7 @@ export default function ClaimLD() {
       console.log("📝 Preparing transaction...");
       const tx = prepareContractCall({
         contract: claimContract,
-        method: "function claimTokens(uint256[] memory, uint256[] memory)",
+        method: "function claimTokens(uint256[], uint256[])",
         params: [originalTokenIds, otherTokenIds],
       });
       
