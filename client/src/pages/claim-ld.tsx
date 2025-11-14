@@ -195,7 +195,7 @@ export default function ClaimLD() {
             </p>
             <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-full">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Live on Hyperliquid • Chain ID {CONTRACTS.CHAIN_ID} • v5.0
+              Live on Hyperliquid • Chain ID {CONTRACTS.CHAIN_ID} • v5.1 NO-CACHE
             </div>
           </div>
 
