@@ -23,11 +23,16 @@ export const CLAIM_MANAGER_ABI = [
     "inputs": [
       {
         "internalType": "uint256[]",
-        "name": "tokenIds",
+        "name": "originalTokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "otherTokenIds",
         "type": "uint256[]"
       }
     ],
-    "name": "claimFromOriginalNFT",
+    "name": "claimTokens",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -35,22 +40,17 @@ export const CLAIM_MANAGER_ABI = [
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "wallet",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "tokenIds",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
       }
     ],
-    "name": "getOriginalNFTClaimable",
+    "name": "isOriginalNFTClaimed",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bool",
         "name": "",
-        "type": "uint256"
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -64,7 +64,7 @@ export const CLAIM_MANAGER_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "isOriginalNFTClaimed",
+    "name": "isOtherNFTClaimed",
     "outputs": [
       {
         "internalType": "bool",
