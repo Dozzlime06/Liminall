@@ -1,54 +1,112 @@
 import { useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
+import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, Wallet, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { Gift, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { 
-  NFT_SNAPSHOT, 
-  TOKENS_PER_NFT, 
-  TOTAL_CLAIMABLE_TOKENS,
-  getHolderData,
-  hasClaimed,
-  markAsClaimed
-} from "@/data/nft-snapshot";
+import { CONTRACTS, CLAIM_MANAGER_ABI, NFT_ABI } from "@/lib/contracts";
 
 export default function ClaimLD() {
   const account = useActiveAccount();
   const [isClaiming, setIsClaiming] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [claimableAmount, setClaimableAmount] = useState(0);
+  const [nftCount, setNftCount] = useState(0);
   const [claimed, setClaimed] = useState(false);
-  const [holderData, setHolderData] = useState<{
-    nftCount: number;
-    claimableTokens: number;
-  } | null>(null);
+  const [txHash, setTxHash] = useState("");
 
   useEffect(() => {
     if (account?.address) {
-      const data = getHolderData(account.address);
-      if (data) {
-        setHolderData({
-          nftCount: data.nftCount,
-          claimableTokens: data.claimableTokens
-        });
-        setClaimed(hasClaimed(account.address));
-      } else {
-        setHolderData(null);
-        setClaimed(false);
-      }
+      fetchClaimableData();
     }
   }, [account?.address]);
 
-  const handleClaim = async () => {
-    if (!account || !holderData || claimed) return;
+  const fetchClaimableData = async () => {
+    if (!account) return;
     
+    setIsLoading(true);
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(CONTRACTS.RPC_URL);
+      const claimManager = new ethers.Contract(
+        CONTRACTS.CLAIM_MANAGER,
+        CLAIM_MANAGER_ABI,
+        provider
+      );
+      
+      const nftContract = new ethers.Contract(
+        CONTRACTS.ORIGINAL_LD_NFT,
+        NFT_ABI,
+        provider
+      );
+      
+      const balance = await nftContract.balanceOf(account.address);
+      const nftCountNum = balance.toNumber();
+      setNftCount(nftCountNum);
+      
+      if (nftCountNum > 0) {
+        const claimable = nftCountNum * CONTRACTS.TOKENS_PER_NFT;
+        setClaimableAmount(claimable);
+      }
+    } catch (error) {
+      console.error("Error fetching claimable data:", error);
+    }
+    setIsLoading(false);
+  };
+
+  const handleClaim = async () => {
+    if (!account || !(window as any).ethereum) {
+      alert("Please connect your wallet");
+      return;
+    }
+
     setIsClaiming(true);
-    // TODO: Implement actual blockchain claim transaction
-    setTimeout(() => {
-      markAsClaimed(account.address);
-      setIsClaiming(false);
+    try {
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+      const signer = provider.getSigner();
+      
+      const nftContract = new ethers.Contract(
+        CONTRACTS.ORIGINAL_LD_NFT,
+        NFT_ABI,
+        provider
+      );
+      
+      const balance = await nftContract.balanceOf(account.address);
+      const nftCountNum = balance.toNumber();
+      
+      const originalTokenIds: number[] = [];
+      const otherTokenIds: number[] = [];
+      
+      for (let i = 0; i < 10000 && originalTokenIds.length < nftCountNum; i++) {
+        try {
+          const owner = await nftContract.ownerOf(i);
+          if (owner.toLowerCase() === account.address.toLowerCase()) {
+            originalTokenIds.push(i);
+          }
+        } catch {}
+      }
+      
+      const claimManager = new ethers.Contract(
+        CONTRACTS.CLAIM_MANAGER,
+        CLAIM_MANAGER_ABI,
+        signer
+      );
+      
+      console.log("Claiming with tokenIds:", originalTokenIds, otherTokenIds);
+      
+      const tx = await claimManager.claimTokens(originalTokenIds, otherTokenIds);
+      setTxHash(tx.hash);
+      
+      await tx.wait();
+      
       setClaimed(true);
-    }, 2000);
+      alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+    } catch (error: any) {
+      console.error("Claim error:", error);
+      alert(`Claim failed: ${error.message || "Unknown error"}`);
+    }
+    setIsClaiming(false);
   };
 
   return (
@@ -69,7 +127,7 @@ export default function ClaimLD() {
             </p>
             <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-full">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              200M $LD total supply • Ongoing program for all NFT holders
+              Live on Hyperliquid • Chain ID {CONTRACTS.CHAIN_ID}
             </div>
           </div>
 
@@ -80,7 +138,7 @@ export default function ClaimLD() {
                 Token Claim
               </CardTitle>
               <CardDescription>
-                NFT holders can claim 25,000 $LD per NFT
+                Connect your wallet and claim your $LD tokens
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -94,10 +152,17 @@ export default function ClaimLD() {
                     Click "Connect Wallet" in the header above
                   </p>
                 </div>
-              ) : !holderData ? (
+              ) : isLoading ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                  <p className="text-muted-foreground">
+                    Checking your NFT balance...
+                  </p>
+                </div>
+              ) : nftCount === 0 ? (
                 <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-6 text-center">
                   <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Not Eligible</h3>
+                  <h3 className="text-xl font-semibold mb-2">No NFTs Found</h3>
                   <p className="text-muted-foreground mb-2">
                     This wallet does not hold any Liminal Dreams NFTs
                   </p>
@@ -117,13 +182,13 @@ export default function ClaimLD() {
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">NFTs Held</span>
                       <span className="text-xl font-bold">
-                        {holderData.nftCount} NFTs
+                        {nftCount} NFTs
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Claimable Tokens</span>
                       <span className="text-2xl font-bold text-primary">
-                        {holderData.claimableTokens.toLocaleString()} $LD
+                        {claimableAmount.toLocaleString()} $LD
                       </span>
                     </div>
                   </div>
@@ -131,10 +196,20 @@ export default function ClaimLD() {
                   {claimed ? (
                     <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6 text-center">
                       <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">Already Claimed!</h3>
-                      <p className="text-muted-foreground">
-                        You have already claimed {holderData.claimableTokens.toLocaleString()} $LD tokens
+                      <h3 className="text-xl font-semibold mb-2">Claim Successful!</h3>
+                      <p className="text-muted-foreground mb-2">
+                        You claimed {claimableAmount.toLocaleString()} $LD tokens
                       </p>
+                      {txHash && (
+                        <a 
+                          href={`https://explorer.hyperliquid.xyz/tx/${txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline"
+                        >
+                          View Transaction
+                        </a>
+                      )}
                     </div>
                   ) : (
                     <Button
@@ -145,94 +220,35 @@ export default function ClaimLD() {
                     >
                       {isClaiming ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                           Claiming...
                         </>
                       ) : (
                         <>
                           <Gift className="w-5 h-5 mr-2" />
-                          Claim {holderData.claimableTokens.toLocaleString()} $LD Tokens
+                          Claim {claimableAmount.toLocaleString()} $LD Tokens
                         </>
                       )}
                     </Button>
                   )}
 
                   <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-                    <h4 className="font-semibold text-sm">Calculation:</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {holderData.nftCount} NFTs × {TOKENS_PER_NFT.toLocaleString()} $LD = {holderData.claimableTokens.toLocaleString()} $LD
+                    <h4 className="font-semibold text-sm">How it works:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>{nftCount} NFTs × {CONTRACTS.TOKENS_PER_NFT.toLocaleString()} $LD = {claimableAmount.toLocaleString()} $LD</li>
+                      <li>One signature to claim all tokens</li>
+                      <li>You keep your NFTs</li>
+                      <li>Tokens sent directly to your wallet</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                    <p className="text-xs text-blue-300">
+                      <strong>Smart Contract:</strong> {CONTRACTS.CLAIM_MANAGER.slice(0, 10)}...{CONTRACTS.CLAIM_MANAGER.slice(-8)}
                     </p>
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 backdrop-blur-sm border-border mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                All Eligible Wallets
-              </CardTitle>
-              <CardDescription>
-                Snapshot of all NFT holders and their claimable amounts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {NFT_SNAPSHOT.map((holder, index) => (
-                  <div 
-                    key={holder.address}
-                    className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary">#{index + 1}</span>
-                      </div>
-                      <div>
-                        <p className="font-mono text-sm">
-                          {holder.address.slice(0, 6)}...{holder.address.slice(-4)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {holder.nftCount} NFTs
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        {holder.claimableTokens.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">$LD</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 p-4 bg-primary/10 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Current Snapshot</span>
-                  <span className="text-xl font-bold text-primary">
-                    {TOTAL_CLAIMABLE_TOKENS.toLocaleString()} $LD
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  13 holders • 620 NFTs
-                </p>
-                <div className="border-t border-primary/20 pt-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total $LD Supply</span>
-                    <span className="font-bold text-primary">200,000,000 $LD</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm text-muted-foreground">Reserved for Future Holders</span>
-                    <span className="font-bold">184,500,000 $LD</span>
-                  </div>
-                </div>
-                <div className="bg-muted/50 rounded p-3 mt-3">
-                  <p className="text-xs text-muted-foreground">
-                    💡 <strong>Ongoing Program:</strong> Future NFT buyers will also receive 25,000 $LD per NFT when they claim.
-                  </p>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
