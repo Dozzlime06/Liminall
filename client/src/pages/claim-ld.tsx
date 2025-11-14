@@ -83,7 +83,7 @@ export default function ClaimLD() {
     try {
       // Fetch tokenIds from backend (instant!)
       console.log("📡 Fetching NFT data from server...");
-      const response = await fetch(`/api/nft/wallet/${account.address}`);
+      const response = await fetch(`/api/nft/wallet/${account.address}?t=${Date.now()}`);
       const data = await response.json();
       
       const originalTokenIds = data.originalTokenIds || [];
@@ -91,7 +91,17 @@ export default function ClaimLD() {
       
       console.log("✅ Got tokenIds instantly:", originalTokenIds, otherTokenIds);
       
-      // Use Thirdweb to send transaction
+      if (originalTokenIds.length === 0 && otherTokenIds.length === 0) {
+        throw new Error("No tokenIds found for your wallet");
+      }
+      
+      // Prepare transaction data manually
+      const iface = new ethers.utils.Interface(CLAIM_MANAGER_ABI);
+      const data_encoded = iface.encodeFunctionData("claimTokens", [originalTokenIds, otherTokenIds]);
+      
+      console.log("📝 Encoded transaction data:", data_encoded);
+      
+      // Use Thirdweb to send the raw transaction
       const claimContract = getContract({
         client,
         chain: hyperliquid,
@@ -100,26 +110,26 @@ export default function ClaimLD() {
       
       const transaction = prepareContractCall({
         contract: claimContract,
-        method: "function claimTokens(uint256[] originalTokenIds, uint256[] otherTokenIds)",
+        method: "function claimTokens(uint256[], uint256[])",
         params: [originalTokenIds, otherTokenIds],
       });
       
       sendTransaction(transaction, {
         onSuccess: (result) => {
-          console.log("Transaction successful:", result);
+          console.log("✅ Transaction successful:", result);
           setTxHash(result.transactionHash);
           setClaimed(true);
           alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
           setIsClaiming(false);
         },
         onError: (error) => {
-          console.error("Claim error:", error);
+          console.error("❌ Claim error:", error);
           alert(`Claim failed: ${error.message || "Unknown error"}`);
           setIsClaiming(false);
         },
       });
     } catch (error: any) {
-      console.error("Claim error:", error);
+      console.error("❌ Claim error:", error);
       alert(`Claim failed: ${error.message || "Unknown error"}`);
       setIsClaiming(false);
     }
