@@ -134,12 +134,16 @@ export default function ClaimLD() {
       
       // Step 2: Claim tokens with manually encoded data
       console.log("📝 Encoding claim transaction...");
+      console.log("  Original tokenIds:", originalTokenIds.length, originalTokenIds.slice(0, 5));
+      console.log("  Other tokenIds:", otherTokenIds.length, otherTokenIds.slice(0, 5));
+      
       const claimIface = new ethers.utils.Interface(CLAIM_MANAGER_ABI);
       const claimData = claimIface.encodeFunctionData("claimTokens", [
         originalTokenIds,
         otherTokenIds
       ]);
       
+      console.log("  Encoded data (first 100 chars):", claimData.substring(0, 100));
       console.log("📤 Sending claim transaction...");
       const claimTx = await sendTransaction({
         transaction: {
