@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import fs from "fs";
 import path from "path";
+import solc from "solc";
 
 const RPC_URL = "https://rpc.hyperliquid.xyz/evm";
 const CHAIN_ID = 999;
@@ -19,8 +20,11 @@ async function main() {
     throw new Error("PRIVATE_KEY not found in environment");
   }
 
+  // Clean the private key (remove spaces/whitespace)
+  const cleanedKey = privateKey.replace(/\s+/g, '');
+
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-  const wallet = new ethers.Wallet(privateKey, provider);
+  const wallet = new ethers.Wallet(cleanedKey, provider);
 
   console.log("📍 Deployer address:", wallet.address);
   
@@ -33,7 +37,6 @@ async function main() {
 
   // Compile
   console.log("⚙️  Compiling contract...");
-  const solc = require("solc");
   
   const input = {
     language: "Solidity",
