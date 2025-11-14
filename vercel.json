@@ -1,0 +1,26 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    {
+      "source": "/api/agents/payments",
+      "destination": "/api/agents/payments"
+    },
+    {
+      "source": "/api/agents/activity",
+      "destination": "/api/agents/activity"
+    },
+    {
+      "source": "/api/agents/stats",
+      "destination": "/api/agents/stats"
+    },
+    {
+      "source": "/api/agents",
+      "destination": "/api/agents"
+    },
+    {
+      "source": "/api/support/chat",
+      "destination": "/api/support/chat"
+    }
+  ]
+}

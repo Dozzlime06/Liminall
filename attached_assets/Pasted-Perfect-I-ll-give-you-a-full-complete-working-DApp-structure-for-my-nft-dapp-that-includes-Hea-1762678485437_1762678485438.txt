@@ -1,0 +1,404 @@
+Perfect! I’ll give you a full complete working DApp structure for my-nft-dapp/ that includes:
+	•	Header with wallet connection
+	•	Minting interface
+	•	Total supply / max supply
+	•	Mint price and total cost dynamically
+	•	Max per transaction
+	•	Progress bar
+	•	Mint button with status messages
+
+Here’s everything in all files:
+
+⸻
+
+File Structure
+
+my-nft-dapp/
+├─ package.json
+├─ public/
+│   └─ favicon.ico
+├─ src/
+│   ├─ pages/
+│   │   ├─ index.js
+│   │   └─ _app.js
+│   ├─ components/
+│   │   ├─ Header.js
+│   │   ├─ NFTMintingDApp.js
+│   │   └─ ProgressBar.js
+│   ├─ styles/
+│   │   └─ globals.css
+│   └─ abi/
+│       └─ contractAbi.json
+
+
+⸻
+
+package.json
+
+{
+  "name": "my-nft-dapp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@privy-io/react-auth": "^1.1.1",
+    "ethers": "^5.8.0",
+    "next": "13.5.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
+
+
+⸻
+
+src/pages/_app.js
+
+import '../styles/globals.css';
+
+export default function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />;
+}
+
+
+⸻
+
+src/pages/index.js
+
+import Header from '../components/Header';
+import NFTMintingDApp from '../components/NFTMintingDApp';
+
+export default function Home() {
+  return (
+    <>
+      <Header />
+      <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+        <NFTMintingDApp />
+      </main>
+    </>
+  );
+}
+
+
+⸻
+
+src/components/Header.js
+
+import React from 'react';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+
+export default function Header() {
+  const { authenticated, login } = usePrivy();
+  const { wallets } = useWallets();
+
+  return (
+    <header className="header">
+      <h1>Liminal Dreams</h1>
+      {authenticated && wallets.length > 0 ? (
+        <div className="wallet-address">
+          Connected: {wallets[0].address.slice(0,6)}...{wallets[0].address.slice(-4)}
+        </div>
+      ) : (
+        <button onClick={login} className="button">
+          Connect Wallet
+        </button>
+      )}
+    </header>
+  );
+}
+
+
+⸻
+
+src/components/ProgressBar.js
+
+import React from 'react';
+
+export default function ProgressBar({ percent }) {
+  return (
+    <div className="progress-bar">
+      <div className="progress-filled" style={{ width: `${percent}%` }}></div>
+    </div>
+  );
+}
+
+
+⸻
+
+src/components/NFTMintingDApp.js
+
+import React, { useState, useEffect } from 'react';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { ethers } from 'ethers';
+import contractAbi from '../abi/contractAbi.json';
+import ProgressBar from './ProgressBar';
+
+export default function NFTMintingDApp() {
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+
+  const [contract, setContract] = useState(null);
+  const [provider, setProvider] = useState(null);
+  const [userAddress, setUserAddress] = useState('');
+  const [mintQuantity, setMintQuantity] = useState(1);
+  const [totalSupply, setTotalSupply] = useState(0);
+  const [maxSupply, setMaxSupply] = useState(0);
+  const [mintPrice, setMintPrice] = useState('0');
+  const [maxMintAmount, setMaxMintAmount] = useState(20);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState({ type: '', message: '' });
+
+  const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+  const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '999');
+
+  // Fetch contract data before wallet connection
+  useEffect(() => {
+    const fetchContractData = async () => {
+      if (!CONTRACT_ADDRESS) return;
+
+      try {
+        const rpcProvider = new ethers.providers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+        const nftContract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, rpcProvider);
+
+        const [total, max, price, maxMint] = await Promise.all([
+          nftContract.totalSupply().catch(() => ethers.BigNumber.from(0)),
+          nftContract.maxSupply().catch(() => ethers.BigNumber.from(10000)),
+          nftContract.hypeCost().catch(() => ethers.BigNumber.from(0)),
+          nftContract.maxMintAmount().catch(() => ethers.BigNumber.from(20))
+        ]);
+
+        setTotalSupply(total.toNumber());
+        setMaxSupply(max.toNumber());
+        setMintPrice(ethers.utils.formatUnits(price, 18));
+        setMaxMintAmount(maxMint.toNumber());
+      } catch (err) {
+        console.error('Error fetching contract data:', err);
+      }
+    };
+    fetchContractData();
+  }, []);
+
+  // Initialize contract after wallet connection
+  useEffect(() => {
+    if (authenticated && wallets.length > 0) {
+      const wallet = wallets[0];
+      setUserAddress(wallet.address);
+
+      const initContract = async () => {
+        try {
+          await wallet.switchChain(CHAIN_ID);
+          const ethersProvider = await wallet.getEthersProvider();
+          setProvider(ethersProvider);
+
+          const signer = ethersProvider.getSigner();
+          const nftContract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, signer);
+          setContract(nftContract);
+        } catch (err) {
+          console.error(err);
+          setStatus({ type: 'error', message: 'Failed to connect wallet.' });
+        }
+      };
+      initContract();
+    }
+  }, [authenticated, wallets]);
+
+  const handleMint = async () => {
+    if (!contract) {
+      setStatus({ type: 'error', message: 'Connect wallet to mint.' });
+      return;
+    }
+    if (mintQuantity < 1 || mintQuantity > maxMintAmount) {
+      setStatus({ type: 'error', message: `Mint 1-${maxMintAmount} per transaction` });
+      return;
+    }
+
+    setLoading(true);
+    setStatus({ type: 'pending', message: 'Minting...' });
+
+    try {
+      const totalHype = ethers.utils.parseUnits(mintPrice, 18).mul(mintQuantity);
+      const tx = await contract.mintWithHype(mintQuantity, { value: totalHype, gasLimit: 300000 });
+      await tx.wait();
+
+      const newTotal = await contract.totalSupply();
+      setTotalSupply(newTotal.toNumber());
+      setStatus({ type: 'success', message: `Successfully minted ${mintQuantity} NFT(s)!` });
+      setMintQuantity(1);
+    } catch (err) {
+      console.error(err);
+      setStatus({ type: 'error', message: 'Minting failed.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const progressPercent = maxSupply > 0 ? Math.min(100, (totalSupply / maxSupply) * 100) : 0;
+  const totalCost = (parseFloat(mintPrice) * mintQuantity).toFixed(4);
+
+  return (
+    <div className="minting-dapp">
+      {authenticated && userAddress && (
+        <p className="connected">Connected: {userAddress.slice(0, 6)}...{userAddress.slice(-4)}</p>
+      )}
+      {!authenticated && <p className="connect-msg">Connect wallet to mint NFTs</p>}
+
+      <div className="info-box">
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <span>Total Supply:</span>
+          <strong>{totalSupply} / {maxSupply}</strong>
+        </div>
+
+        <ProgressBar percent={progressPercent} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <span>Mint Price:</span>
+          <strong>{mintPrice} $HYPE</strong>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <span>Max Per Tx:</span>
+          <strong>{maxMintAmount}</strong>
+        </div>
+      </div>
+
+      <div className="mint-controls">
+        <label style={{ display: 'block', marginBottom: '0.25rem' }}>Quantity to Mint</label>
+        <input
+          type="number"
+          min="1"
+          max={maxMintAmount}
+          value={mintQuantity}
+          onChange={e => setMintQuantity(Math.min(Math.max(1, parseInt(e.target.value) || 1), maxMintAmount))}
+          disabled={!authenticated || loading}
+        />
+        <p>Total Cost: {totalCost} $HYPE</p>
+        <button
+          onClick={handleMint}
+          disabled={!authenticated || loading}
+        >
+          {authenticated ? (loading ? 'Minting...' : `Mint ${mintQuantity} NFT(s)`) : 'Connect Wallet to Mint'}
+        </button>
+      </div>
+
+      {status.message && <div className={`status-${status.type}`}>{status.message}</div>}
+    </div>
+  );
+}
+
+
+⸻
+
+src/styles/globals.css
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0d0d0d;
+  color: #eee;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background-color: #111;
+  border-bottom: 1px solid #333;
+  align-items: center;
+}
+
+.wallet-address {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.button {
+  padding: 0.5rem 1rem;
+  background-color: #6200ea;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.info-box {
+  background-color: #111;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background-color: #333;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+}
+
+.progress-filled {
+  height: 100%;
+  background-color: #6200ea;
+  border-radius: 6px;
+}
+
+.mint-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.mint-controls input {
+  width: 100px;
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: #fff;
+}
+
+.connected {
+  color: #0f0;
+}
+
+.connect-msg {
+  color: #aaa;
+}
+
+.status-pending { color: #ff0; margin-top: 0.5rem; }
+.status-success { color: #0f0; margin-top: 0.5rem; }
+.status-error { color: #f00; margin-top: 0.5rem; }
+
+
+⸻
+
+src/abi/contractAbi.json
+
+Paste your full NFT contract ABI here. Make sure function names match (totalSupply, maxSupply, hypeCost, maxMintAmount, mintWithHype).
+
+⸻
+
+✅ This DApp now includes:
+	•	Header wallet connection
+	•	NFT minting interface
+	•	Total supply / max supply
+	•	Mint price + live total cost
+	•	Max per transaction
+	•	Progress bar
+	•	Status messages
+
+⸻
+
+I can also add proper error handling if wallet is on wrong chain and auto-switch + display a friendly warning, so users don’t get failed mint errors.
+
+Do you want me to add that?
