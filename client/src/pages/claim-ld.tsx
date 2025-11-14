@@ -1,15 +1,25 @@
 import { useState, useEffect } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { ethers } from "ethers";
+import { prepareContractCall } from "thirdweb";
+import { getContract } from "thirdweb";
+import { defineChain } from "thirdweb/chains";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CONTRACTS, CLAIM_MANAGER_ABI, NFT_ABI } from "@/lib/contracts";
+import { client } from "@/lib/thirdweb-client";
+
+const hyperliquid = defineChain({
+  id: 999,
+  rpc: "https://rpc.hyperliquid.xyz/evm",
+});
 
 export default function ClaimLD() {
   const account = useActiveAccount();
+  const { mutate: sendTransaction } = useSendTransaction();
   const [isClaiming, setIsClaiming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [claimableAmount, setClaimableAmount] = useState(0);
@@ -64,15 +74,14 @@ export default function ClaimLD() {
   };
 
   const handleClaim = async () => {
-    if (!account || !(window as any).ethereum) {
+    if (!account) {
       alert("Please connect your wallet");
       return;
     }
 
     setIsClaiming(true);
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
+      const provider = new ethers.providers.JsonRpcProvider(CONTRACTS.RPC_URL);
       
       const originalTokenIds: number[] = [];
       const otherTokenIds: number[] = [];
@@ -119,26 +128,40 @@ export default function ClaimLD() {
         }
       }
       
-      const claimManager = new ethers.Contract(
-        CONTRACTS.CLAIM_MANAGER,
-        CLAIM_MANAGER_ABI,
-        signer
-      );
-      
       console.log("Claiming with tokenIds:", originalTokenIds, otherTokenIds);
       
-      const tx = await claimManager.claimTokens(originalTokenIds, otherTokenIds);
-      setTxHash(tx.hash);
+      // Use Thirdweb to send transaction
+      const claimContract = getContract({
+        client,
+        chain: hyperliquid,
+        address: CONTRACTS.CLAIM_MANAGER,
+      });
       
-      await tx.wait();
+      const transaction = prepareContractCall({
+        contract: claimContract,
+        method: "function claimTokens(uint256[] calldata originalTokenIds, uint256[] calldata otherTokenIds) external",
+        params: [originalTokenIds, otherTokenIds],
+      });
       
-      setClaimed(true);
-      alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+      sendTransaction(transaction, {
+        onSuccess: (result) => {
+          console.log("Transaction successful:", result);
+          setTxHash(result.transactionHash);
+          setClaimed(true);
+          alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+          setIsClaiming(false);
+        },
+        onError: (error) => {
+          console.error("Claim error:", error);
+          alert(`Claim failed: ${error.message || "Unknown error"}`);
+          setIsClaiming(false);
+        },
+      });
     } catch (error: any) {
       console.error("Claim error:", error);
       alert(`Claim failed: ${error.message || "Unknown error"}`);
+      setIsClaiming(false);
     }
-    setIsClaiming(false);
   };
 
   return (
