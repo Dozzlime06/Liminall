@@ -138,7 +138,7 @@ export default function ClaimLD() {
         }
       }
       
-      // Step 2: Claim tokens with manually encoded data
+      // Step 2: Claim tokens using Thirdweb account
       console.log("📝 Encoding claim transaction...");
       console.log("  Original tokenIds:", originalTokenIds.length, originalTokenIds.slice(0, 5));
       console.log("  Other tokenIds:", otherTokenIds.length, otherTokenIds.slice(0, 5));
@@ -150,18 +150,19 @@ export default function ClaimLD() {
       ]);
       
       console.log("  Encoded data (first 100 chars):", claimData.substring(0, 100));
-      console.log("📤 Sending claim transaction...");
-      const claimTx = await sendTransaction({
+      console.log("📤 Sending transaction via Thirdweb account...");
+      
+      const result = await sendTransaction({
+        account,
         transaction: {
           to: CONTRACTS.CLAIM_MANAGER,
           data: claimData,
           chain: hyperliquid,
         },
-        account,
       });
       
-      console.log("✅ Claim successful:", claimTx.transactionHash);
-      setTxHash(claimTx.transactionHash);
+      console.log("✅ Claim successful:", result.transactionHash);
+      setTxHash(result.transactionHash);
       setClaimed(true);
       alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
       setIsClaiming(false);
