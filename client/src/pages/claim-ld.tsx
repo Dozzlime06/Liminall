@@ -99,36 +99,67 @@ export default function ClaimLD() {
         return;
       }
       
-      // Use ethers.js directly with browser wallet
-      const ethereum = (window as any).ethereum;
-      if (!ethereum) {
-        alert("Please use a Web3 wallet");
-        setIsClaiming(false);
-        return;
+      // Step 1: If has Other NFTs, approve ClaimManager first
+      if (otherTokenIds.length > 0) {
+        console.log("🔐 Approving ClaimManager for Other NFTs...");
+        const otherNftContract = getContract({
+          client,
+          chain: hyperliquid,
+          address: CONTRACTS.OTHER_NFT,
+        });
+        
+        const approveTx = prepareContractCall({
+          contract: otherNftContract,
+          method: "function setApprovalForAll(address operator, bool approved)",
+          params: [CONTRACTS.CLAIM_MANAGER, true],
+        });
+        
+        // Send approval transaction
+        await new Promise((resolve, reject) => {
+          sendTransaction(approveTx, {
+            onSuccess: (result) => {
+              console.log("✅ Approval successful:", result.transactionHash);
+              resolve(result);
+            },
+            onError: (error) => {
+              console.error("❌ Approval failed:", error);
+              reject(error);
+            },
+          });
+        });
       }
       
-      console.log("📝 Setting up ethers provider...");
-      const provider = new ethers.providers.Web3Provider(ethereum);
-      const signer = provider.getSigner();
+      // Step 2: Claim tokens
+      const claimContract = getContract({
+        client,
+        chain: hyperliquid,
+        address: CONTRACTS.CLAIM_MANAGER,
+      });
       
-      const claimContract = new ethers.Contract(
-        CONTRACTS.CLAIM_MANAGER,
-        CLAIM_MANAGER_ABI,
-        signer
-      );
+      console.log("📝 Preparing claim transaction...");
+      const claimTx = prepareContractCall({
+        contract: claimContract,
+        method: "function claimTokens(uint256[], uint256[])",
+        params: [originalTokenIds, otherTokenIds],
+      });
       
       console.log("📤 Sending claim transaction...");
-      const tx = await claimContract.claimTokens(originalTokenIds, otherTokenIds);
-      console.log("⏳ Waiting for confirmation...");
-      const receipt = await tx.wait();
-      
-      console.log("✅ Success:", receipt.transactionHash);
-      setTxHash(receipt.transactionHash);
-      setClaimed(true);
-      alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
-      setIsClaiming(false);
+      sendTransaction(claimTx, {
+        onSuccess: (result) => {
+          console.log("✅ Claim successful:", result.transactionHash);
+          setTxHash(result.transactionHash);
+          setClaimed(true);
+          alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+          setIsClaiming(false);
+        },
+        onError: (error) => {
+          console.error("❌ Claim failed:", error);
+          alert(`Claim failed: ${error.message}`);
+          setIsClaiming(false);
+        },
+      });
     } catch (error: any) {
-      console.error("❌ Claim error:", error);
+      console.error("❌ Error:", error);
       alert(`Failed: ${error.message || "Unknown error"}`);
       setIsClaiming(false);
     }
