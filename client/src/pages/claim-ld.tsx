@@ -74,8 +74,8 @@ export default function ClaimLD() {
   };
 
   const handleClaim = async () => {
-    if (!account || !(window as any).ethereum) {
-      alert("Please connect your wallet");
+    if (!account) {
+      alert("Please connect your wallet first");
       return;
     }
 
@@ -83,44 +83,52 @@ export default function ClaimLD() {
     try {
       // Fetch tokenIds from backend (instant!)
       console.log("📡 Fetching NFT data from server...");
-      const response = await fetch(`/api/nft/wallet/${account.address}?t=${Date.now()}`);
+      const response = await fetch(`/api/nft/wallet/${account.address}`);
       const data = await response.json();
       
       const originalTokenIds = data.originalTokenIds || [];
       const otherTokenIds = data.otherTokenIds || [];
       
-      console.log("✅ Got tokenIds instantly:", originalTokenIds, otherTokenIds);
+      console.log("✅ Got tokenIds:", originalTokenIds.length, "original,", otherTokenIds.length, "other");
       
       if (originalTokenIds.length === 0 && otherTokenIds.length === 0) {
-        throw new Error("No tokenIds found for your wallet");
+        alert("No NFTs found for your wallet");
+        setIsClaiming(false);
+        return;
       }
       
-      // Use ethers.js directly (bypass Thirdweb encoding issues)
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      await provider.send("wallet_switchEthereumChain", [{ chainId: "0x3e7" }]); // Chain ID 999
-      const signer = provider.getSigner();
+      // Use Thirdweb's sendTransaction
+      const claimContract = getContract({
+        client,
+        chain: hyperliquid,
+        address: CONTRACTS.CLAIM_MANAGER,
+      });
       
-      const claimManager = new ethers.Contract(
-        CONTRACTS.CLAIM_MANAGER,
-        CLAIM_MANAGER_ABI,
-        signer
-      );
+      console.log("📝 Preparing transaction...");
+      const tx = prepareContractCall({
+        contract: claimContract,
+        method: "claimTokens",
+        params: [originalTokenIds, otherTokenIds],
+      });
       
-      console.log("📝 Sending transaction...");
-      const tx = await claimManager.claimTokens(originalTokenIds, otherTokenIds);
-      console.log("⏳ Transaction sent:", tx.hash);
-      setTxHash(tx.hash);
-      
-      console.log("⏳ Waiting for confirmation...");
-      const receipt = await tx.wait();
-      console.log("✅ Transaction confirmed!", receipt);
-      
-      setClaimed(true);
-      alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
-      setIsClaiming(false);
+      console.log("📤 Sending transaction...");
+      sendTransaction(tx, {
+        onSuccess: (result) => {
+          console.log("✅ Success:", result.transactionHash);
+          setTxHash(result.transactionHash);
+          setClaimed(true);
+          alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+          setIsClaiming(false);
+        },
+        onError: (error) => {
+          console.error("❌ Error:", error);
+          alert(`Claim failed: ${error.message}`);
+          setIsClaiming(false);
+        },
+      });
     } catch (error: any) {
       console.error("❌ Claim error:", error);
-      alert(`Claim failed: ${error.message || "Unknown error"}`);
+      alert(`Failed: ${error.message || "Unknown error"}`);
       setIsClaiming(false);
     }
   };
