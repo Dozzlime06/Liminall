@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { sendTransaction, encode, prepareContractCall } from "thirdweb";
+import { sendTransaction, prepareTransaction } from "thirdweb";
 import { defineChain } from "thirdweb/chains";
 import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,9 @@ import { Gift, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CONTRACTS, CLAIM_MANAGER_ABI, NFT_ABI } from "@/lib/contracts";
+import { client } from "@/lib/thirdweb-client";
 
-const hyperliquid = defineChain({
-  id: 999,
-  rpc: "https://rpc.hyperliquid.xyz/evm",
-});
+const hyperliquid = defineChain(999);
 
 export default function ClaimLD() {
   const account = useActiveAccount();
@@ -121,12 +119,15 @@ export default function ClaimLD() {
           ]);
           
           console.log("📤 Sending approval transaction...");
+          const approvalTransaction = prepareTransaction({
+            client,
+            chain: hyperliquid,
+            to: CONTRACTS.OTHER_NFT,
+            data: approvalData,
+          });
+          
           const approvalTx = await sendTransaction({
-            transaction: {
-              to: CONTRACTS.OTHER_NFT,
-              data: approvalData,
-              chain: hyperliquid,
-            },
+            transaction: approvalTransaction,
             account,
           });
           
@@ -152,13 +153,16 @@ export default function ClaimLD() {
       console.log("  Encoded data (first 100 chars):", claimData.substring(0, 100));
       console.log("📤 Sending transaction via Thirdweb account...");
       
+      const claimTransaction = prepareTransaction({
+        client,
+        chain: hyperliquid,
+        to: CONTRACTS.CLAIM_MANAGER,
+        data: claimData,
+      });
+      
       const result = await sendTransaction({
+        transaction: claimTransaction,
         account,
-        transaction: {
-          to: CONTRACTS.CLAIM_MANAGER,
-          data: claimData,
-          chain: hyperliquid,
-        },
       });
       
       console.log("✅ Claim successful:", result.transactionHash);
@@ -191,7 +195,7 @@ export default function ClaimLD() {
             </p>
             <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-full">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Live on Hyperliquid • Chain ID {CONTRACTS.CHAIN_ID}
+              Live on Hyperliquid • Chain ID {CONTRACTS.CHAIN_ID} • v5.0
             </div>
           </div>
 
