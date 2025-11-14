@@ -1,25 +1,16 @@
 import { useState, useEffect } from "react";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount } from "thirdweb/react";
+import { sendTransaction, encode, prepareContractCall } from "thirdweb";
 import { ethers } from "ethers";
-import { prepareContractCall } from "thirdweb";
-import { getContract } from "thirdweb";
-import { defineChain } from "thirdweb/chains";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CONTRACTS, CLAIM_MANAGER_ABI, NFT_ABI } from "@/lib/contracts";
-import { client } from "@/lib/thirdweb-client";
-
-const hyperliquid = defineChain({
-  id: 999,
-  rpc: "https://rpc.hyperliquid.xyz/evm",
-});
 
 export default function ClaimLD() {
   const account = useActiveAccount();
-  const { mutate: sendTransaction } = useSendTransaction();
   const [isClaiming, setIsClaiming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
@@ -116,65 +107,54 @@ export default function ClaimLD() {
         
         if (!isApproved) {
           console.log("🔐 Not approved yet - requesting approval...");
-          const otherNftContract = getContract({
-            client,
-            chain: hyperliquid,
-            address: CONTRACTS.OTHER_NFT,
+          // Manually encode approval transaction
+          const iface = new ethers.utils.Interface(NFT_ABI);
+          const approvalData = iface.encodeFunctionData("setApprovalForAll", [
+            CONTRACTS.CLAIM_MANAGER,
+            true
+          ]);
+          
+          console.log("📤 Sending approval transaction...");
+          const approvalTx = await sendTransaction({
+            transaction: {
+              to: CONTRACTS.OTHER_NFT,
+              data: approvalData,
+              chain: { id: 999, rpc: CONTRACTS.RPC_URL },
+            },
+            account,
           });
           
-          const approveTx = prepareContractCall({
-            contract: otherNftContract,
-            method: "function setApprovalForAll(address operator, bool approved)",
-            params: [CONTRACTS.CLAIM_MANAGER, true],
-          });
-          
-          // Send approval transaction
-          await new Promise((resolve, reject) => {
-            sendTransaction(approveTx, {
-              onSuccess: (result) => {
-                console.log("✅ Approval successful:", result.transactionHash);
-                resolve(result);
-              },
-              onError: (error) => {
-                console.error("❌ Approval failed:", error);
-                reject(error);
-              },
-            });
-          });
+          console.log("✅ Approval sent:", approvalTx.transactionHash);
+          // Wait a bit for confirmation
+          await new Promise(resolve => setTimeout(resolve, 3000));
         } else {
           console.log("✅ Already approved - skipping approval step!");
         }
       }
       
-      // Step 2: Claim tokens
-      const claimContract = getContract({
-        client,
-        chain: hyperliquid,
-        address: CONTRACTS.CLAIM_MANAGER,
-      });
-      
-      console.log("📝 Preparing claim transaction...");
-      const claimTx = prepareContractCall({
-        contract: claimContract,
-        method: "function claimTokens(uint256[], uint256[])",
-        params: [originalTokenIds, otherTokenIds],
-      });
+      // Step 2: Claim tokens with manually encoded data
+      console.log("📝 Encoding claim transaction...");
+      const claimIface = new ethers.utils.Interface(CLAIM_MANAGER_ABI);
+      const claimData = claimIface.encodeFunctionData("claimTokens", [
+        originalTokenIds,
+        otherTokenIds
+      ]);
       
       console.log("📤 Sending claim transaction...");
-      sendTransaction(claimTx, {
-        onSuccess: (result) => {
-          console.log("✅ Claim successful:", result.transactionHash);
-          setTxHash(result.transactionHash);
-          setClaimed(true);
-          alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
-          setIsClaiming(false);
+      const claimTx = await sendTransaction({
+        transaction: {
+          to: CONTRACTS.CLAIM_MANAGER,
+          data: claimData,
+          chain: { id: 999, rpc: CONTRACTS.RPC_URL },
         },
-        onError: (error) => {
-          console.error("❌ Claim failed:", error);
-          alert(`Claim failed: ${error.message}`);
-          setIsClaiming(false);
-        },
+        account,
       });
+      
+      console.log("✅ Claim successful:", claimTx.transactionHash);
+      setTxHash(claimTx.transactionHash);
+      setClaimed(true);
+      alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+      setIsClaiming(false);
     } catch (error: any) {
       console.error("❌ Error:", error);
       alert(`Failed: ${error.message || "Unknown error"}`);
