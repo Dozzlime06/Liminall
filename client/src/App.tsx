@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PrivyProviderWrapper } from "@/lib/privy-provider";
 import Home from "@/pages/home";
+import ClaimLD from "@/pages/claim-ld";
 import AIAgents from "@/pages/ai-agents";
 import Scan from "@/pages/scan";
 import NotFound from "@/pages/not-found";
@@ -14,6 +15,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/claim-ld" component={ClaimLD} />
       <Route path="/ai-agents" component={AIAgents} />
       <Route path="/scan" component={Scan} />
       <Route component={NotFound} />

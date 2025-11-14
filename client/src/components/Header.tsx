@@ -4,7 +4,7 @@ import { createWallet } from "thirdweb/wallets";
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Home, Menu, Bot, Sparkles, Search } from 'lucide-react';
+import { Home, Menu, Bot, Sparkles, Search, Gift } from 'lucide-react';
 import { client, hyperliquid } from '@/lib/thirdweb-client';
 
 const wallets = [
@@ -23,6 +23,7 @@ export default function Header() {
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
+    { path: '/claim-ld', label: 'Claim-LD', icon: Gift },
     { path: '/ai-agents', label: 'AI Agents', icon: Bot, badge: 'Soon' },
     { path: '/scan', label: 'Scan', icon: Search },
   ];
