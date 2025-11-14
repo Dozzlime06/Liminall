@@ -6,11 +6,11 @@ export const CONTRACTS = {
   // NFT Contracts
   ORIGINAL_LD_NFT: "0x7d5c48a82e13168d84498548fe0a2282b9c1f16b",
   
-  // Token Contract (Deploy first)
-  LD_TOKEN: "", // Add after deployment
+  // Token Contract (Deployed!)
+  LD_TOKEN: "0x02c1b88AbaB9bb72F3F67cc91f73Bf4800D419eE",
   
-  // Claim Manager (Deploy second)
-  CLAIM_MANAGER: "", // Add after deployment
+  // Claim Manager (Deployed!)
+  CLAIM_MANAGER: "0xc2B4F51aB1fB944006069505d0c95cEB3F5b8098",
   
   // Constants
   TOKENS_PER_NFT: 25000,
