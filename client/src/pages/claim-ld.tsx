@@ -96,14 +96,26 @@ export default function ClaimLD() {
       const originalBalance = await originalNFTContract.balanceOf(account.address);
       const originalCount = originalBalance.toNumber();
       
+      console.log(`Fetching ${originalCount} Original NFT tokenIds...`);
+      
+      // Use tokenOfOwnerByIndex for fast enumeration
       if (originalCount > 0) {
-        for (let i = 0; i < 10000 && originalTokenIds.length < originalCount; i++) {
-          try {
-            const owner = await originalNFTContract.ownerOf(i);
-            if (owner.toLowerCase() === account.address.toLowerCase()) {
-              originalTokenIds.push(i);
-            }
-          } catch {}
+        try {
+          for (let i = 0; i < originalCount; i++) {
+            const tokenId = await originalNFTContract.tokenOfOwnerByIndex(account.address, i);
+            originalTokenIds.push(tokenId.toNumber());
+          }
+        } catch (err) {
+          console.log("tokenOfOwnerByIndex not supported, falling back to scan");
+          // Fallback: scan limited range
+          for (let i = 0; i < 1000 && originalTokenIds.length < originalCount; i++) {
+            try {
+              const owner = await originalNFTContract.ownerOf(i);
+              if (owner.toLowerCase() === account.address.toLowerCase()) {
+                originalTokenIds.push(i);
+              }
+            } catch {}
+          }
         }
       }
       
@@ -117,14 +129,25 @@ export default function ClaimLD() {
       const otherBalance = await otherNFTContract.balanceOf(account.address);
       const otherCount = otherBalance.toNumber();
       
+      console.log(`Fetching ${otherCount} Other NFT tokenIds...`);
+      
       if (otherCount > 0) {
-        for (let i = 0; i < 10000 && otherTokenIds.length < otherCount; i++) {
-          try {
-            const owner = await otherNFTContract.ownerOf(i);
-            if (owner.toLowerCase() === account.address.toLowerCase()) {
-              otherTokenIds.push(i);
-            }
-          } catch {}
+        try {
+          for (let i = 0; i < otherCount; i++) {
+            const tokenId = await otherNFTContract.tokenOfOwnerByIndex(account.address, i);
+            otherTokenIds.push(tokenId.toNumber());
+          }
+        } catch (err) {
+          console.log("tokenOfOwnerByIndex not supported, falling back to scan");
+          // Fallback: scan limited range
+          for (let i = 0; i < 1000 && otherTokenIds.length < otherCount; i++) {
+            try {
+              const owner = await otherNFTContract.ownerOf(i);
+              if (owner.toLowerCase() === account.address.toLowerCase()) {
+                otherTokenIds.push(i);
+              }
+            } catch {}
+          }
         }
       }
       
