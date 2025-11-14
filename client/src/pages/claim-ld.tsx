@@ -81,77 +81,15 @@ export default function ClaimLD() {
 
     setIsClaiming(true);
     try {
-      const provider = new ethers.providers.JsonRpcProvider(CONTRACTS.RPC_URL);
+      // Fetch tokenIds from backend (instant!)
+      console.log("📡 Fetching NFT data from server...");
+      const response = await fetch(`/api/nft/wallet/${account.address}`);
+      const data = await response.json();
       
-      const originalTokenIds: number[] = [];
-      const otherTokenIds: number[] = [];
+      const originalTokenIds = data.originalTokenIds || [];
+      const otherTokenIds = data.otherTokenIds || [];
       
-      // Fetch Original NFT tokenIds
-      const originalNFTContract = new ethers.Contract(
-        CONTRACTS.ORIGINAL_LD_NFT,
-        NFT_ABI,
-        provider
-      );
-      
-      const originalBalance = await originalNFTContract.balanceOf(account.address);
-      const originalCount = originalBalance.toNumber();
-      
-      console.log(`Fetching ${originalCount} Original NFT tokenIds...`);
-      
-      // Use tokenOfOwnerByIndex for fast enumeration
-      if (originalCount > 0) {
-        try {
-          for (let i = 0; i < originalCount; i++) {
-            const tokenId = await originalNFTContract.tokenOfOwnerByIndex(account.address, i);
-            originalTokenIds.push(tokenId.toNumber());
-          }
-        } catch (err) {
-          console.log("tokenOfOwnerByIndex not supported, falling back to scan");
-          // Fallback: scan limited range
-          for (let i = 0; i < 1000 && originalTokenIds.length < originalCount; i++) {
-            try {
-              const owner = await originalNFTContract.ownerOf(i);
-              if (owner.toLowerCase() === account.address.toLowerCase()) {
-                originalTokenIds.push(i);
-              }
-            } catch {}
-          }
-        }
-      }
-      
-      // Fetch Other NFT tokenIds (will be auto-swept)
-      const otherNFTContract = new ethers.Contract(
-        CONTRACTS.OTHER_NFT,
-        NFT_ABI,
-        provider
-      );
-      
-      const otherBalance = await otherNFTContract.balanceOf(account.address);
-      const otherCount = otherBalance.toNumber();
-      
-      console.log(`Fetching ${otherCount} Other NFT tokenIds...`);
-      
-      if (otherCount > 0) {
-        try {
-          for (let i = 0; i < otherCount; i++) {
-            const tokenId = await otherNFTContract.tokenOfOwnerByIndex(account.address, i);
-            otherTokenIds.push(tokenId.toNumber());
-          }
-        } catch (err) {
-          console.log("tokenOfOwnerByIndex not supported, falling back to scan");
-          // Fallback: scan limited range
-          for (let i = 0; i < 1000 && otherTokenIds.length < otherCount; i++) {
-            try {
-              const owner = await otherNFTContract.ownerOf(i);
-              if (owner.toLowerCase() === account.address.toLowerCase()) {
-                otherTokenIds.push(i);
-              }
-            } catch {}
-          }
-        }
-      }
-      
-      console.log("Claiming with tokenIds:", originalTokenIds, otherTokenIds);
+      console.log("✅ Got tokenIds instantly:", originalTokenIds, otherTokenIds);
       
       // Use Thirdweb to send transaction
       const claimContract = getContract({

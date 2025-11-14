@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import OpenAI from "openai";
 import { z } from "zod";
+import { getNFTsForWallet } from "./nft-indexer";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
@@ -52,6 +53,17 @@ const chatMessageSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.get("/api/nft/wallet/:address", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const nfts = getNFTsForWallet(address);
+      res.json(nfts);
+    } catch (error: any) {
+      console.error("Error fetching NFTs:", error);
+      res.status(500).json({ error: "Failed to fetch NFTs" });
+    }
+  });
+
   app.get("/api/agents", async (req, res) => {
     const agents = await storage.getAllAgents();
     res.json(agents);
