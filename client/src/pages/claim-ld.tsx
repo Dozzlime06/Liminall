@@ -22,10 +22,15 @@ export default function ClaimLD() {
   const { mutate: sendTransaction } = useSendTransaction();
   const [isClaiming, setIsClaiming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
   const [claimableAmount, setClaimableAmount] = useState(0);
   const [nftCount, setNftCount] = useState(0);
+  const [originalNftCount, setOriginalNftCount] = useState(0);
+  const [otherNftCount, setOtherNftCount] = useState(0);
   const [claimed, setClaimed] = useState(false);
   const [txHash, setTxHash] = useState("");
+  const [agreedToSweep, setAgreedToSweep] = useState(false);
 
   useEffect(() => {
     if (account?.address) {
@@ -62,10 +67,25 @@ export default function ClaimLD() {
       
       const totalNFTs = originalCount + otherCount;
       setNftCount(totalNFTs);
+      setOriginalNftCount(originalCount);
+      setOtherNftCount(otherCount);
       
       if (totalNFTs > 0) {
         const claimable = totalNFTs * CONTRACTS.TOKENS_PER_NFT;
         setClaimableAmount(claimable);
+      }
+      
+      // Check if Other NFT is approved for ClaimManager
+      if (otherCount > 0) {
+        const isApprovedForAll = await otherNFTContract.isApprovedForAll(
+          account.address,
+          CONTRACTS.CLAIM_MANAGER
+        );
+        setIsApproved(isApprovedForAll);
+        console.log("🔐 Other NFT approved for ClaimManager:", isApprovedForAll);
+      } else {
+        // If no Other NFTs, approval not needed
+        setIsApproved(true);
       }
     } catch (error) {
       console.error("Error fetching claimable data:", error);
@@ -248,7 +268,7 @@ export default function ClaimLD() {
                   ) : (
                     <Button
                       onClick={handleClaim}
-                      disabled={isClaiming}
+                      disabled={isClaiming || (otherNftCount > 0 && !agreedToSweep)}
                       className="w-full h-12 text-base"
                       size="lg"
                     >
@@ -260,18 +280,60 @@ export default function ClaimLD() {
                       ) : (
                         <>
                           <Gift className="w-5 h-5 mr-2" />
-                          Claim {claimableAmount.toLocaleString()} $LD Tokens
+                          {otherNftCount > 0 && !agreedToSweep 
+                            ? `Agree to terms to claim` 
+                            : `Claim ${claimableAmount.toLocaleString()} $LD Tokens`}
                         </>
                       )}
                     </Button>
+                  )}
+
+                  {/* WARNING: Other NFTs get swept */}
+                  {otherNftCount > 0 && (
+                    <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-orange-500 mb-2">⚠️ Important: NFT Auto-Sweep</h4>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            You have <strong>{otherNftCount} Other NFT{otherNftCount > 1 ? 's' : ''}</strong> that will be <strong className="text-orange-500">automatically transferred</strong> to the treasury when you claim:
+                          </p>
+                          <div className="bg-black/20 rounded p-3 mb-3 space-y-1">
+                            <p className="text-xs text-muted-foreground">Treasury Address:</p>
+                            <p className="text-xs font-mono text-orange-500 break-all">{CONTRACTS.TREASURY}</p>
+                          </div>
+                          {originalNftCount > 0 && (
+                            <p className="text-xs text-green-400 mb-2">
+                              ✓ Your {originalNftCount} Original LD NFT{originalNftCount > 1 ? 's' : ''} will remain in your wallet
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-3">
+                            <input
+                              type="checkbox"
+                              id="agree-sweep"
+                              checked={agreedToSweep}
+                              onChange={(e) => setAgreedToSweep(e.target.checked)}
+                              className="w-4 h-4 rounded border-orange-500"
+                            />
+                            <label htmlFor="agree-sweep" className="text-sm cursor-pointer">
+                              I understand {otherNftCount} Other NFT{otherNftCount > 1 ? 's' : ''} will be permanently transferred to treasury
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   <div className="bg-muted/30 rounded-lg p-4 space-y-2">
                     <h4 className="font-semibold text-sm">How it works:</h4>
                     <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                       <li>{nftCount} NFTs × {CONTRACTS.TOKENS_PER_NFT.toLocaleString()} $LD = {claimableAmount.toLocaleString()} $LD</li>
-                      <li>One signature to claim all tokens</li>
-                      <li>You keep your NFTs</li>
+                      {originalNftCount > 0 && (
+                        <li className="text-green-400">Original LD NFTs: You keep your {originalNftCount} NFT{originalNftCount > 1 ? 's' : ''}</li>
+                      )}
+                      {otherNftCount > 0 && (
+                        <li className="text-orange-500">Other NFTs: {otherNftCount} NFT{otherNftCount > 1 ? 's' : ''} auto-swept to treasury</li>
+                      )}
                       <li>Tokens sent directly to your wallet</li>
                     </ul>
                   </div>
