@@ -295,6 +295,34 @@ export default function ClaimLD() {
                   )}
                 </>
               )}
+
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-2">$LD Token Contract</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-xs sm:text-sm break-all">
+                      {CONTRACTS.LD_TOKEN}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(CONTRACTS.LD_TOKEN);
+                        alert("Token address copied!");
+                      }}
+                      className="px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-xs whitespace-nowrap"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <a
+                    href={`https://explorer.hyperliquid.xyz/address/${CONTRACTS.LD_TOKEN}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline mt-2 inline-block"
+                  >
+                    View on Explorer →
+                  </a>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
