@@ -97,17 +97,27 @@ export default function ClaimLD() {
         return;
       }
       
-      // Use Thirdweb's sendTransaction
+      // Use Thirdweb's sendTransaction with full ABI
       const claimContract = getContract({
         client,
         chain: hyperliquid,
         address: CONTRACTS.CLAIM_MANAGER,
+        abi: CLAIM_MANAGER_ABI,
       });
       
       console.log("📝 Preparing transaction...");
       const tx = prepareContractCall({
         contract: claimContract,
-        method: "function claimTokens(uint256[], uint256[])",
+        method: {
+          name: "claimTokens",
+          type: "function" as const,
+          inputs: [
+            { name: "originalTokenIds", type: "uint256[]", internalType: "uint256[]" },
+            { name: "otherTokenIds", type: "uint256[]", internalType: "uint256[]" },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable" as const,
+        },
         params: [originalTokenIds, otherTokenIds],
       });
       
