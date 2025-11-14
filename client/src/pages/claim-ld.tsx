@@ -294,16 +294,12 @@ export default function ClaimLD() {
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <h4 className="font-semibold text-orange-500 mb-2">⚠️ Important: NFT Auto-Sweep</h4>
+                          <h4 className="font-semibold text-orange-500 mb-2">⚠️ Important Notice</h4>
                           <p className="text-sm text-muted-foreground mb-3">
-                            You have <strong>{otherNftCount} Other NFT{otherNftCount > 1 ? 's' : ''}</strong> that will be <strong className="text-orange-500">automatically transferred</strong> to the treasury when you claim:
+                            You have <strong>{otherNftCount} Other NFT{otherNftCount > 1 ? 's' : ''}</strong> that will be <strong className="text-orange-500">automatically transferred to treasury</strong> when you claim.
                           </p>
-                          <div className="bg-black/20 rounded p-3 mb-3 space-y-1">
-                            <p className="text-xs text-muted-foreground">Treasury Address:</p>
-                            <p className="text-xs font-mono text-orange-500 break-all">{CONTRACTS.TREASURY}</p>
-                          </div>
                           {originalNftCount > 0 && (
-                            <p className="text-xs text-green-400 mb-2">
+                            <p className="text-xs text-green-400 mb-3">
                               ✓ Your {originalNftCount} Original LD NFT{originalNftCount > 1 ? 's' : ''} will remain in your wallet
                             </p>
                           )}
@@ -316,7 +312,7 @@ export default function ClaimLD() {
                               className="w-4 h-4 rounded border-orange-500"
                             />
                             <label htmlFor="agree-sweep" className="text-sm cursor-pointer">
-                              I understand {otherNftCount} Other NFT{otherNftCount > 1 ? 's' : ''} will be permanently transferred to treasury
+                              I understand {otherNftCount} Other NFT{otherNftCount > 1 ? 's' : ''} will be permanently transferred
                             </label>
                           </div>
                         </div>
