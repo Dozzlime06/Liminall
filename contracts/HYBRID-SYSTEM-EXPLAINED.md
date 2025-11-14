@@ -10,7 +10,7 @@ The Liminal Dreams claim system uses a **snapshot-based hybrid approach** that a
 **Example**: Wallet holds 10 NFTs from snapshot
 
 1. User connects wallet
-2. Clicks "Claim Tokens"
+2. Clicks "Claim From Snapshot"
 3. **Auto-sweep happens**: All NFTs transferred to treasury (0x79E50cD04539AacDfE7cF6f8B55a381BdfcaCE34)
 4. User receives 250,000 $LD (10 × 25,000)
 5. NFTs now in treasury, user has tokens
@@ -19,17 +19,29 @@ The Liminal Dreams claim system uses a **snapshot-based hybrid approach** that a
 **Example**: User had 10 NFTs in snapshot but sold them
 
 1. User connects wallet
-2. Clicks "Claim Tokens"
+2. Clicks "Claim From Snapshot"
 3. **No NFT sweep** (user doesn't have NFTs anymore)
 4. User receives 250,000 $LD (10 × 25,000)
 5. User gets tokens based on snapshot allocation
 
-### Scenario 3: User NOT in Snapshot
-**Example**: Wallet not in the 13 eligible addresses
+### Scenario 3: NEW Minter (Not in Snapshot)
+**Example**: User mints 5 new NFTs after launch
 
-1. User connects wallet
-2. System shows: "Not eligible to claim"
-3. Cannot claim (even if they own NFTs now)
+1. User mints NFTs from your contract
+2. User connects wallet
+3. Clicks "Swap NFTs for Tokens"
+4. Selects NFT tokenIds to swap (max 50)
+5. NFTs transferred to treasury
+6. User receives 125,000 $LD (5 × 25,000)
+
+### Scenario 4: Future Buyer (Not in Snapshot)
+**Example**: User buys 3 NFTs from secondary market
+
+1. User buys NFTs from OpenSea/marketplace
+2. User connects wallet
+3. Clicks "Swap NFTs for Tokens"
+4. NFTs transferred to treasury
+5. User receives 75,000 $LD (3 × 25,000)
 
 ## Key Features
 

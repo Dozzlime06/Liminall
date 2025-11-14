@@ -9,7 +9,8 @@ const deploymentConfig = {
   },
   
   contracts: {
-    nftContract: "0x9125E2d6827a00B0F8330D6ef7BEF07730Bac685",
+    originalNFT: "0x7d5c48a82e13168d84498548fe0a2282b9c1f16b",
+    otherNFT: "0x9125E2d6827a00B0F8330D6ef7BEF07730Bac685",
     treasuryAddress: "0x79E50cD04539AacDfE7cF6f8B55a381BdfcaCE34"
   },
   
@@ -43,28 +44,18 @@ DEPLOYMENT INSTRUCTIONS
    - Total Supply: ${deploymentConfig.totalSupply} $LD
    - You will receive all tokens
 
-2. Deploy ClaimManagerHybrid.sol
+2. Deploy ClaimManagerDual.sol
    Constructor parameters:
-   - nftContract: ${deploymentConfig.contracts.nftContract}
+   - originalNFT: ${deploymentConfig.contracts.originalNFT}
+   - otherNFT: ${deploymentConfig.contracts.otherNFT}
    - ldToken: [LDToken address from step 1]
    - treasuryAddress: ${deploymentConfig.contracts.treasuryAddress}
 
-3. Set Snapshot Data
-   Call: setSnapshotAllocations(addresses[], nftCounts[])
-   
-   Addresses:
-   ${deploymentConfig.snapshot.map(s => `  "${s.address}"`).join(',\n')}
-   
-   NFT Counts:
-   ${deploymentConfig.snapshot.map(s => `  ${s.nftCount}`).join(',\n')}
+3. Fund ClaimManager
+   Transfer $LD tokens to ClaimManager address
+   (Recommend 50M - 100M for all future claims)
 
-4. Finalize Snapshot
-   Call: finalizeSnapshot()
-
-5. Fund ClaimManager
-   Transfer 15,500,000 $LD to ClaimManager address
-
-6. Update Frontend
+4. Update Frontend
    - Add ClaimManager address to client/src/lib/contracts.ts
    - Add LDToken address
 
@@ -72,14 +63,21 @@ DEPLOYMENT INSTRUCTIONS
 USERS CAN NOW CLAIM!
 ====================================
 
-How it works:
-✅ Snapshot users claim their allocation
-✅ If they hold NFTs → Auto-swept to treasury
-✅ If no NFTs → Still get tokens based on snapshot
-✅ One claim per address
+DUAL NFT CLAIM SYSTEM:
 
-Total to distribute: 15,500,000 $LD
-Remaining for future: 184,500,000 $LD
+Original LD NFT (0x7d5c...1f16b) - NO SWEEP:
+✅ Call: claimFromOriginalNFT([tokenIds])
+✅ Get 25,000 $LD per NFT
+✅ Users KEEP their NFTs
+
+Other NFT (0x9125...c685) - SWEEP TO TREASURY:
+✅ Call: claimFromOtherNFT([tokenIds])
+✅ Get 25,000 $LD per NFT
+✅ NFTs transferred to treasury (0x79E5...CE34)
+
+Total Supply: 200,000,000 $LD
+Per NFT: 25,000 $LD (from either contract)
+Each tokenId can claim once
 `);
 
 module.exports = deploymentConfig;
