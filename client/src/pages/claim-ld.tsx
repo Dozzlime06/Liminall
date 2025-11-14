@@ -64,9 +64,13 @@ export default function ClaimLD() {
             <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Claim $LD Tokens
             </h1>
-            <p className="text-muted-foreground text-lg">
-              Claim your Liminal Dreams tokens
+            <p className="text-muted-foreground text-lg mb-2">
+              NFT holders receive 25,000 $LD per NFT
             </p>
+            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-full">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              200M $LD total supply • Ongoing program for all NFT holders
+            </div>
           </div>
 
           <Card className="bg-card/50 backdrop-blur-sm border-border">
@@ -203,16 +207,31 @@ export default function ClaimLD() {
                   </div>
                 ))}
               </div>
-              <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+              <div className="mt-6 p-4 bg-primary/10 rounded-lg space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold">Total Distribution</span>
+                  <span className="font-semibold">Current Snapshot</span>
                   <span className="text-xl font-bold text-primary">
                     {TOTAL_CLAIMABLE_TOKENS.toLocaleString()} $LD
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Across 13 holders for 620 NFTs
+                <p className="text-sm text-muted-foreground">
+                  13 holders • 620 NFTs
                 </p>
+                <div className="border-t border-primary/20 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total $LD Supply</span>
+                    <span className="font-bold text-primary">200,000,000 $LD</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-sm text-muted-foreground">Reserved for Future Holders</span>
+                    <span className="font-bold">184,500,000 $LD</span>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded p-3 mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    💡 <strong>Ongoing Program:</strong> Future NFT buyers will also receive 25,000 $LD per NFT when they claim.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
