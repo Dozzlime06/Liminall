@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
 import { sendTransaction, encode, prepareContractCall } from "thirdweb";
+import { defineChain } from "thirdweb/chains";
 import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,11 @@ import { Gift, Wallet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CONTRACTS, CLAIM_MANAGER_ABI, NFT_ABI } from "@/lib/contracts";
+
+const hyperliquid = defineChain({
+  id: 999,
+  rpc: "https://rpc.hyperliquid.xyz/evm",
+});
 
 export default function ClaimLD() {
   const account = useActiveAccount();
@@ -119,7 +125,7 @@ export default function ClaimLD() {
             transaction: {
               to: CONTRACTS.OTHER_NFT,
               data: approvalData,
-              chain: { id: 999, rpc: CONTRACTS.RPC_URL },
+              chain: hyperliquid,
             },
             account,
           });
@@ -149,7 +155,7 @@ export default function ClaimLD() {
         transaction: {
           to: CONTRACTS.CLAIM_MANAGER,
           data: claimData,
-          chain: { id: 999, rpc: CONTRACTS.RPC_URL },
+          chain: hyperliquid,
         },
         account,
       });
