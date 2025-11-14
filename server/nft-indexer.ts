@@ -1,6 +1,6 @@
 // NFT Snapshot Data - Pre-indexed for instant claims
 const NFT_SNAPSHOT = {
-  "0xa2eb1d6e05c5ee0f2fa6d68b55a381bdfcace34": {
+  "0xa2eB6bE3bDe7e99a8E68E6252E006cEd620ff02f": {
     originalTokenIds: Array.from({length: 136}, (_, i) => i), // 136 NFTs
     otherTokenIds: [],
   },
