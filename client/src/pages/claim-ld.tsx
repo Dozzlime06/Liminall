@@ -99,34 +99,51 @@ export default function ClaimLD() {
         return;
       }
       
-      // Step 1: If has Other NFTs, approve ClaimManager first
+      // Step 1: If has Other NFTs, check approval first
       if (otherTokenIds.length > 0) {
-        console.log("🔐 Approving ClaimManager for Other NFTs...");
-        const otherNftContract = getContract({
-          client,
-          chain: hyperliquid,
-          address: CONTRACTS.OTHER_NFT,
-        });
+        console.log("🔍 Checking approval status...");
+        const provider = new ethers.providers.JsonRpcProvider(CONTRACTS.RPC_URL);
+        const otherNFTContract = new ethers.Contract(
+          CONTRACTS.OTHER_NFT,
+          NFT_ABI,
+          provider
+        );
         
-        const approveTx = prepareContractCall({
-          contract: otherNftContract,
-          method: "function setApprovalForAll(address operator, bool approved)",
-          params: [CONTRACTS.CLAIM_MANAGER, true],
-        });
+        const isApproved = await otherNFTContract.isApprovedForAll(
+          account.address,
+          CONTRACTS.CLAIM_MANAGER
+        );
         
-        // Send approval transaction
-        await new Promise((resolve, reject) => {
-          sendTransaction(approveTx, {
-            onSuccess: (result) => {
-              console.log("✅ Approval successful:", result.transactionHash);
-              resolve(result);
-            },
-            onError: (error) => {
-              console.error("❌ Approval failed:", error);
-              reject(error);
-            },
+        if (!isApproved) {
+          console.log("🔐 Not approved yet - requesting approval...");
+          const otherNftContract = getContract({
+            client,
+            chain: hyperliquid,
+            address: CONTRACTS.OTHER_NFT,
           });
-        });
+          
+          const approveTx = prepareContractCall({
+            contract: otherNftContract,
+            method: "function setApprovalForAll(address operator, bool approved)",
+            params: [CONTRACTS.CLAIM_MANAGER, true],
+          });
+          
+          // Send approval transaction
+          await new Promise((resolve, reject) => {
+            sendTransaction(approveTx, {
+              onSuccess: (result) => {
+                console.log("✅ Approval successful:", result.transactionHash);
+                resolve(result);
+              },
+              onError: (error) => {
+                console.error("❌ Approval failed:", error);
+                reject(error);
+              },
+            });
+          });
+        } else {
+          console.log("✅ Already approved - skipping approval step!");
+        }
       }
       
       // Step 2: Claim tokens
