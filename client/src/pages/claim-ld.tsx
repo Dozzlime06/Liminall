@@ -180,13 +180,9 @@ export default function ClaimLD() {
             <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               Claim $LD Tokens
             </h1>
-            <p className="text-muted-foreground text-lg mb-2">
+            <p className="text-muted-foreground text-lg">
               NFT holders receive 25,000 $LD per NFT
             </p>
-            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-4 py-2 rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Live on Hyperliquid • Chain ID {CONTRACTS.CHAIN_ID} • v6.0 BALANCE
-            </div>
           </div>
 
           <Card className="bg-card/50 backdrop-blur-sm border-border">
