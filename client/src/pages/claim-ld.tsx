@@ -74,7 +74,7 @@ export default function ClaimLD() {
   };
 
   const handleClaim = async () => {
-    if (!account) {
+    if (!account || !(window as any).ethereum) {
       alert("Please connect your wallet");
       return;
     }
@@ -95,39 +95,29 @@ export default function ClaimLD() {
         throw new Error("No tokenIds found for your wallet");
       }
       
-      // Prepare transaction data manually
-      const iface = new ethers.utils.Interface(CLAIM_MANAGER_ABI);
-      const data_encoded = iface.encodeFunctionData("claimTokens", [originalTokenIds, otherTokenIds]);
+      // Use ethers.js directly (bypass Thirdweb encoding issues)
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+      await provider.send("wallet_switchEthereumChain", [{ chainId: "0x3e7" }]); // Chain ID 999
+      const signer = provider.getSigner();
       
-      console.log("📝 Encoded transaction data:", data_encoded);
+      const claimManager = new ethers.Contract(
+        CONTRACTS.CLAIM_MANAGER,
+        CLAIM_MANAGER_ABI,
+        signer
+      );
       
-      // Use Thirdweb to send the raw transaction
-      const claimContract = getContract({
-        client,
-        chain: hyperliquid,
-        address: CONTRACTS.CLAIM_MANAGER,
-      });
+      console.log("📝 Sending transaction...");
+      const tx = await claimManager.claimTokens(originalTokenIds, otherTokenIds);
+      console.log("⏳ Transaction sent:", tx.hash);
+      setTxHash(tx.hash);
       
-      const transaction = prepareContractCall({
-        contract: claimContract,
-        method: "function claimTokens(uint256[], uint256[])",
-        params: [originalTokenIds, otherTokenIds],
-      });
+      console.log("⏳ Waiting for confirmation...");
+      const receipt = await tx.wait();
+      console.log("✅ Transaction confirmed!", receipt);
       
-      sendTransaction(transaction, {
-        onSuccess: (result) => {
-          console.log("✅ Transaction successful:", result);
-          setTxHash(result.transactionHash);
-          setClaimed(true);
-          alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
-          setIsClaiming(false);
-        },
-        onError: (error) => {
-          console.error("❌ Claim error:", error);
-          alert(`Claim failed: ${error.message || "Unknown error"}`);
-          setIsClaiming(false);
-        },
-      });
+      setClaimed(true);
+      alert(`Successfully claimed ${claimableAmount.toLocaleString()} $LD tokens!`);
+      setIsClaiming(false);
     } catch (error: any) {
       console.error("❌ Claim error:", error);
       alert(`Claim failed: ${error.message || "Unknown error"}`);
