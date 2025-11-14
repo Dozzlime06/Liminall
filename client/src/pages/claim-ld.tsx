@@ -29,24 +29,32 @@ export default function ClaimLD() {
     setIsLoading(true);
     try {
       const provider = new ethers.providers.JsonRpcProvider(CONTRACTS.RPC_URL);
-      const claimManager = new ethers.Contract(
-        CONTRACTS.CLAIM_MANAGER,
-        CLAIM_MANAGER_ABI,
-        provider
-      );
       
-      const nftContract = new ethers.Contract(
+      // Check Original NFT balance
+      const originalNFTContract = new ethers.Contract(
         CONTRACTS.ORIGINAL_LD_NFT,
         NFT_ABI,
         provider
       );
       
-      const balance = await nftContract.balanceOf(account.address);
-      const nftCountNum = balance.toNumber();
-      setNftCount(nftCountNum);
+      const originalBalance = await originalNFTContract.balanceOf(account.address);
+      const originalCount = originalBalance.toNumber();
       
-      if (nftCountNum > 0) {
-        const claimable = nftCountNum * CONTRACTS.TOKENS_PER_NFT;
+      // Check Other NFT balance
+      const otherNFTContract = new ethers.Contract(
+        CONTRACTS.OTHER_NFT,
+        NFT_ABI,
+        provider
+      );
+      
+      const otherBalance = await otherNFTContract.balanceOf(account.address);
+      const otherCount = otherBalance.toNumber();
+      
+      const totalNFTs = originalCount + otherCount;
+      setNftCount(totalNFTs);
+      
+      if (totalNFTs > 0) {
+        const claimable = totalNFTs * CONTRACTS.TOKENS_PER_NFT;
         setClaimableAmount(claimable);
       }
     } catch (error) {
@@ -66,25 +74,49 @@ export default function ClaimLD() {
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
       
-      const nftContract = new ethers.Contract(
+      const originalTokenIds: number[] = [];
+      const otherTokenIds: number[] = [];
+      
+      // Fetch Original NFT tokenIds
+      const originalNFTContract = new ethers.Contract(
         CONTRACTS.ORIGINAL_LD_NFT,
         NFT_ABI,
         provider
       );
       
-      const balance = await nftContract.balanceOf(account.address);
-      const nftCountNum = balance.toNumber();
+      const originalBalance = await originalNFTContract.balanceOf(account.address);
+      const originalCount = originalBalance.toNumber();
       
-      const originalTokenIds: number[] = [];
-      const otherTokenIds: number[] = [];
+      if (originalCount > 0) {
+        for (let i = 0; i < 10000 && originalTokenIds.length < originalCount; i++) {
+          try {
+            const owner = await originalNFTContract.ownerOf(i);
+            if (owner.toLowerCase() === account.address.toLowerCase()) {
+              originalTokenIds.push(i);
+            }
+          } catch {}
+        }
+      }
       
-      for (let i = 0; i < 10000 && originalTokenIds.length < nftCountNum; i++) {
-        try {
-          const owner = await nftContract.ownerOf(i);
-          if (owner.toLowerCase() === account.address.toLowerCase()) {
-            originalTokenIds.push(i);
-          }
-        } catch {}
+      // Fetch Other NFT tokenIds (will be auto-swept)
+      const otherNFTContract = new ethers.Contract(
+        CONTRACTS.OTHER_NFT,
+        NFT_ABI,
+        provider
+      );
+      
+      const otherBalance = await otherNFTContract.balanceOf(account.address);
+      const otherCount = otherBalance.toNumber();
+      
+      if (otherCount > 0) {
+        for (let i = 0; i < 10000 && otherTokenIds.length < otherCount; i++) {
+          try {
+            const owner = await otherNFTContract.ownerOf(i);
+            if (owner.toLowerCase() === account.address.toLowerCase()) {
+              otherTokenIds.push(i);
+            }
+          } catch {}
+        }
       }
       
       const claimManager = new ethers.Contract(

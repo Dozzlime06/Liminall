@@ -5,6 +5,7 @@ export const CONTRACTS = {
   
   // NFT Contracts
   ORIGINAL_LD_NFT: "0x7d5c48a82e13168d84498548fe0a2282b9c1f16b",
+  OTHER_NFT: "0x9125E2d6827a00B0F8330D6ef7BEF07730Bac685",
   
   // Token Contract (Deployed!)
   LD_TOKEN: "0x02c1b88AbaB9bb72F3F67cc91f73Bf4800D419eE",
