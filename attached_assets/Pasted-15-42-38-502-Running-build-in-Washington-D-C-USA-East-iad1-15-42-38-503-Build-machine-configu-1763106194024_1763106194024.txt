@@ -1,0 +1,41 @@
+15:42:38.502 Running build in Washington, D.C., USA (East) – iad1
+15:42:38.503 Build machine configuration: 2 cores, 8 GB
+15:42:38.830 Cloning github.com/Dozzlime06/Liminall (Branch: main, Commit: e16ebed)
+15:42:40.705 Cloning completed: 1.874s
+15:42:41.224 Restored build cache from previous deployment (9CN49wmHT1ZuLNgGBfaSPGJK7MSM)
+15:42:43.384 Running "vercel build"
+15:42:43.791 Vercel CLI 48.9.2
+15:42:44.620 Installing dependencies...
+15:42:49.449 npm error code ERESOLVE
+15:42:49.450 npm error ERESOLVE could not resolve
+15:42:49.451 npm error
+15:42:49.451 npm error While resolving: @nomicfoundation/hardhat-toolbox@6.1.0
+15:42:49.451 npm error Found: ethers@5.8.0
+15:42:49.452 npm error node_modules/ethers
+15:42:49.452 npm error   ethers@"^5.7.2" from the root project
+15:42:49.452 npm error   peerOptional ethers@"^5 || ^6" from thirdweb@5.112.0
+15:42:49.452 npm error   node_modules/thirdweb
+15:42:49.452 npm error     thirdweb@"^5.111.8" from the root project
+15:42:49.453 npm error
+15:42:49.453 npm error Could not resolve dependency:
+15:42:49.454 npm error peer @nomicfoundation/hardhat-chai-matchers@"^2.1.0" from @nomicfoundation/hardhat-toolbox@6.1.0
+15:42:49.454 npm error node_modules/@nomicfoundation/hardhat-toolbox
+15:42:49.454 npm error   @nomicfoundation/hardhat-toolbox@"^6.1.0" from the root project
+15:42:49.454 npm error
+15:42:49.454 npm error Conflicting peer dependency: ethers@6.15.0
+15:42:49.454 npm error node_modules/ethers
+15:42:49.454 npm error   peer ethers@"^6.14.0" from @nomicfoundation/hardhat-chai-matchers@2.1.0
+15:42:49.454 npm error   node_modules/@nomicfoundation/hardhat-chai-matchers
+15:42:49.454 npm error     peer @nomicfoundation/hardhat-chai-matchers@"^2.1.0" from @nomicfoundation/hardhat-toolbox@6.1.0
+15:42:49.455 npm error     node_modules/@nomicfoundation/hardhat-toolbox
+15:42:49.455 npm error       @nomicfoundation/hardhat-toolbox@"^6.1.0" from the root project
+15:42:49.455 npm error
+15:42:49.455 npm error Fix the upstream dependency conflict, or retry
+15:42:49.455 npm error this command with --force or --legacy-peer-deps
+15:42:49.455 npm error to accept an incorrect (and potentially broken) dependency resolution.
+15:42:49.455 npm error
+15:42:49.455 npm error
+15:42:49.456 npm error For a full report see:
+15:42:49.456 npm error /vercel/.npm/_logs/2025-11-14T07_42_44_841Z-eresolve-report.txt
+15:42:49.456 npm error A complete log of this run can be found in: /vercel/.npm/_logs/2025-11-14T07_42_44_841Z-debug-0.log
+15:42:49.496 Error: Command "npm install" exited with 1
