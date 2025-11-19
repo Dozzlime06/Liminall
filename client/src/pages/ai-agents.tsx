@@ -43,7 +43,7 @@ export default function AIAgents() {
                     <SelectContent>
                       <SelectItem value="trading-bot">Trading Bot</SelectItem>
                       <SelectItem value="yield-optimizer">Yield Optimizer</SelectItem>
-                      <SelectItem value="nft-sniper">NFT Sniper</SelectItem>
+                      <SelectItem value="nft-sniper">HyperEVM,BASE Sniper Bot</SelectItem>
                       <SelectItem value="portfolio-manager">Portfolio Manager</SelectItem>
                     </SelectContent>
                   </Select>
